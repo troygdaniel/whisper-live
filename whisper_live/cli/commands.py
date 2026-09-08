@@ -15,10 +15,12 @@ from ..utils import get_output_filename, ensure_directory
 class TranscriptionSession:
     """Manages a transcription session."""
 
-    def __init__(self, model_name, output_path, language=None):
+    def __init__(self, model_name, output_path, language=None, device=None, source_name="microphone"):
         self.model_name = model_name
         self.output_path = output_path
         self.language = language
+        self.device = device
+        self.source_name = source_name
 
         self.config = Config()
         self.audio = None
@@ -32,7 +34,7 @@ class TranscriptionSession:
         # Initialize components
         self.display = TerminalDisplay(
             model_name=self.model_name,
-            source="microphone"
+            source=self.source_name
         )
         self.display.start()
 
@@ -48,7 +50,8 @@ class TranscriptionSession:
         # Start audio capture
         self.audio = AudioCapture(
             sample_rate=self.config.sample_rate,
-            chunk_duration=self.config.chunk_duration
+            chunk_duration=self.config.chunk_duration,
+            device=self.device
         )
         self.audio.start()
 
@@ -57,7 +60,7 @@ class TranscriptionSession:
             self.writer = FileWriter(
                 self.output_path,
                 model_name=self.model_name,
-                source="microphone"
+                source=self.source_name
             )
             self.writer.start()
             self.display.print_info(f"Saving to: {self.output_path}")
@@ -147,8 +150,48 @@ def cli():
               help='Language code (default: auto-detect)')
 @click.option('--no-file', is_flag=True,
               help='Disable file output (terminal only)')
-def start(model, output, language, no_file):
-    """Start live transcription from microphone."""
+@click.option('--device', default=None,
+              help='Audio device index or name pattern (e.g., "BlackHole", "Microphone")')
+@click.option('--source', default=None,
+              type=click.Choice(['mic', 'system', 'blackhole']),
+              help='Audio source shortcut (mic=default, system/blackhole=system audio)')
+def start(model, output, language, no_file, device, source):
+    """Start live transcription from microphone or system audio."""
+
+    # Determine device and source name
+    device_index = None
+    source_name = "microphone"
+
+    if source:
+        # Handle source shortcuts
+        if source in ['system', 'blackhole']:
+            device_index = AudioCapture.find_device('blackhole')
+            if device_index is None:
+                click.echo("Error: BlackHole device not found.")
+                click.echo("\nTo capture system audio, install BlackHole:")
+                click.echo("  brew install blackhole-2ch")
+                click.echo("\nThen set up Multi-Output Device in Audio MIDI Setup.")
+                click.echo("See README for detailed instructions.")
+                sys.exit(1)
+            source_name = "system audio (BlackHole)"
+    elif device:
+        # Try to parse device as integer index first
+        try:
+            device_index = int(device)
+            device_name = AudioCapture.get_device_name(device_index)
+            source_name = device_name
+        except ValueError:
+            # Not an integer, treat as name pattern
+            device_index = AudioCapture.find_device(device)
+            if device_index is None:
+                click.echo(f"Error: No device found matching '{device}'")
+                click.echo("\nRun 'whisper-live devices' to see available devices.")
+                sys.exit(1)
+            source_name = AudioCapture.get_device_name(device_index)
+
+    # Show selected device
+    if device_index is not None:
+        click.echo(f"Using device: {source_name}\n")
 
     # Determine output path
     config = Config()
@@ -168,7 +211,9 @@ def start(model, output, language, no_file):
     session = TranscriptionSession(
         model_name=model,
         output_path=output_path,
-        language=language
+        language=language,
+        device=device_index,
+        source_name=source_name
     )
 
     # Set up signal handler for graceful shutdown

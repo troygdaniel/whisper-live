@@ -7,19 +7,21 @@ import threading
 
 
 class AudioCapture:
-    """Captures audio from microphone in chunks."""
+    """Captures audio from microphone or system audio in chunks."""
 
-    def __init__(self, sample_rate=16000, chunk_duration=2.0):
+    def __init__(self, sample_rate=16000, chunk_duration=2.0, device=None):
         """
         Initialize audio capture.
 
         Args:
             sample_rate: Audio sample rate in Hz (Whisper requires 16000)
             chunk_duration: Duration of each audio chunk in seconds
+            device: Device index or name (None = default input device)
         """
         self.sample_rate = sample_rate
         self.chunk_duration = chunk_duration
         self.chunk_size = int(sample_rate * chunk_duration)
+        self.device = device
 
         self.audio_queue = Queue()
         self.is_recording = False
@@ -42,7 +44,7 @@ class AudioCapture:
             self.audio_queue.put(chunk)
 
     def start(self):
-        """Start capturing audio from microphone."""
+        """Start capturing audio from selected device."""
         if self.is_recording:
             return
 
@@ -51,6 +53,7 @@ class AudioCapture:
 
         # Start audio stream
         self.stream = sd.InputStream(
+            device=self.device,  # Use specified device or default
             samplerate=self.sample_rate,
             channels=1,  # Mono
             dtype=np.float32,
@@ -98,6 +101,35 @@ class AudioCapture:
     def list_devices(self):
         """List available audio input devices."""
         return sd.query_devices()
+
+    @staticmethod
+    def find_device(name_pattern):
+        """
+        Find device by name pattern (case-insensitive).
+
+        Args:
+            name_pattern: String to search for in device names
+
+        Returns:
+            Device index or None if not found
+        """
+        devices = sd.query_devices()
+        name_pattern = name_pattern.lower()
+
+        for i, device in enumerate(devices):
+            if device['max_input_channels'] > 0:
+                if name_pattern in device['name'].lower():
+                    return i
+        return None
+
+    @staticmethod
+    def get_device_name(device_index):
+        """Get device name by index."""
+        try:
+            device = sd.query_devices(device_index)
+            return device['name']
+        except:
+            return "Unknown Device"
 
     def __enter__(self):
         """Context manager entry."""

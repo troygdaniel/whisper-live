@@ -39,13 +39,22 @@ whisper-live start
 ## Commands
 
 ### Start Transcription
+
+**Microphone (default):**
 ```bash
-whisper-live start                    # Default settings
+whisper-live start                    # Default microphone
 whisper-live start --model tiny       # Faster model
 whisper-live start --model small      # More accurate
 whisper-live start --output notes.txt # Custom filename
 whisper-live start --no-file          # Terminal only
 whisper-live start --language en      # Force language
+```
+
+**System Audio (requires BlackHole):**
+```bash
+whisper-live start --source system       # Capture system audio
+whisper-live start --device "BlackHole"  # Select device by name
+whisper-live start --device 5            # Select device by index
 ```
 
 ### List Audio Devices
@@ -84,6 +93,41 @@ Model: base | Source: microphone
 Duration: 00:01:45
 Ended: 2026-09-07 21:46:57
 ```
+
+## System Audio Capture
+
+To transcribe audio playing on your computer (Zoom calls, YouTube videos, podcasts):
+
+### 1. Install BlackHole
+
+```bash
+brew install blackhole-2ch
+```
+
+### 2. Create Multi-Output Device
+
+1. Open **Audio MIDI Setup** app (in /Applications/Utilities/)
+2. Click the **+** button (bottom left) → **Create Multi-Output Device**
+3. Check both:
+   - **Built-in Output** (so you can hear audio)
+   - **BlackHole 2ch** (captures audio for whisper-live)
+4. Right-click the Multi-Output Device → **Use This Device For Sound Output**
+
+### 3. Start Transcription
+
+```bash
+whisper-live start --source system
+```
+
+This captures all system audio playing through your speakers/headphones.
+
+### Use Cases
+- Transcribe Zoom/Teams meetings
+- Capture YouTube video audio
+- Transcribe podcasts
+- Convert any audio playback to text
+
+**Note:** You'll still hear the audio normally while transcribing.
 
 ## Integration with Claude
 
@@ -139,9 +183,9 @@ whisper-live start --model tiny  # Use faster model
 - Models cache to `~/.cache/huggingface/`
 - Delete cache and retry if corrupted
 
-## Future Enhancements (Phase 2)
+## Future Enhancements
 
-- System audio capture (via BlackHole)
+- ✓ **System audio capture** - Implemented! Use `--source system`
 - Rich terminal UI with panels
 - Clipboard auto-copy
 - Multiple output formats (JSON, Markdown)
