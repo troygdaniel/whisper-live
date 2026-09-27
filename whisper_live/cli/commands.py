@@ -15,12 +15,13 @@ from ..utils import get_output_filename, ensure_directory
 class TranscriptionSession:
     """Manages a transcription session."""
 
-    def __init__(self, model_name, output_path, language=None, device=None, source_name="microphone"):
+    def __init__(self, model_name, output_path, language=None, device=None, source_name="microphone", enable_diarization=False):
         self.model_name = model_name
         self.output_path = output_path
         self.language = language
         self.device = device
         self.source_name = source_name
+        self.enable_diarization = enable_diarization
 
         self.config = Config()
         self.audio = None
@@ -42,10 +43,14 @@ class TranscriptionSession:
         self.display.show_status("Loading Whisper model (this may take a moment on first run)...")
         self.engine = TranscriptionEngine(
             model_name=self.model_name,
-            language=self.language
+            language=self.language,
+            enable_diarization=self.enable_diarization
         )
         self.engine.load_model()
-        self.display.show_status("Model loaded successfully")
+        if self.enable_diarization:
+            self.display.show_status("Model loaded successfully (with speaker diarization)")
+        else:
+            self.display.show_status("Model loaded successfully")
 
         # Start audio capture
         self.audio = AudioCapture(
@@ -88,12 +93,14 @@ class TranscriptionSession:
                 result = self.engine.transcribe_chunk(chunk, self.config.sample_rate)
 
                 if result['text']:
+                    speaker = result.get('speaker', None)
+
                     # Display in terminal
-                    self.display.add_transcript(result['text'], result['start'])
+                    self.display.add_transcript(result['text'], result['start'], speaker)
 
                     # Write to file
                     if self.writer:
-                        self.writer.write_transcript(result['text'], result['start'])
+                        self.writer.write_transcript(result['text'], result['start'], speaker)
 
             except Exception as e:
                 self.display.print_error(f"Transcription error: {e}")
@@ -118,9 +125,10 @@ class TranscriptionSession:
                 try:
                     result = self.engine.transcribe_chunk(chunk, self.config.sample_rate)
                     if result['text']:
-                        self.display.add_transcript(result['text'], result['start'])
+                        speaker = result.get('speaker', None)
+                        self.display.add_transcript(result['text'], result['start'], speaker)
                         if self.writer:
-                            self.writer.write_transcript(result['text'], result['start'])
+                            self.writer.write_transcript(result['text'], result['start'], speaker)
                 except:
                     pass
 
@@ -155,7 +163,9 @@ def cli():
 @click.option('--source', default=None,
               type=click.Choice(['mic', 'system', 'blackhole']),
               help='Audio source shortcut (mic=default, system/blackhole=system audio)')
-def start(model, output, language, no_file, device, source):
+@click.option('--diarize', is_flag=True,
+              help='Enable speaker diarization (identify different speakers)')
+def start(model, output, language, no_file, device, source, diarize):
     """Start live transcription from microphone or system audio."""
 
     # Determine device and source name
@@ -213,7 +223,8 @@ def start(model, output, language, no_file, device, source):
         output_path=output_path,
         language=language,
         device=device_index,
-        source_name=source_name
+        source_name=source_name,
+        enable_diarization=diarize
     )
 
     # Set up signal handler for graceful shutdown

@@ -5,3 +5,6 @@ click>=8.1.7
 rich>=13.7.0
 pyperclip>=1.8.2
 pyyaml>=6.0.1
+pyannote.audio>=3.1.0
+torch>=2.0.0
+torchaudio>=2.0.0

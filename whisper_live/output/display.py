@@ -42,26 +42,34 @@ class TerminalDisplay:
         self.console.print(f"Model: [yellow]{self.model_name}[/yellow] | "
                           f"Source: [yellow]{self.source}[/yellow]\n")
 
-    def add_transcript(self, text, timestamp):
+    def add_transcript(self, text, timestamp, speaker=None):
         """
         Add a new transcript line.
 
         Args:
             text: Transcribed text
             timestamp: Timestamp in seconds
+            speaker: Speaker label (optional)
         """
         if not text or not text.strip():
             return
 
         formatted_time = format_timestamp(timestamp)
-        self.transcripts.append((formatted_time, text.strip()))
+
+        # Format with speaker label if available
+        if speaker:
+            speaker_label = f"[Speaker {speaker}]"
+            self.transcripts.append((formatted_time, speaker_label, text.strip()))
+            # Display with speaker label
+            self.console.print(f"[dim]{formatted_time}[/dim] [bold green]{speaker_label}[/bold green] {text.strip()}")
+        else:
+            self.transcripts.append((formatted_time, text.strip()))
+            # Display without speaker label
+            self.console.print(f"[dim]{formatted_time}[/dim] {text.strip()}")
 
         # Keep only the last max_lines
         if len(self.transcripts) > self.max_lines:
             self.transcripts = self.transcripts[-self.max_lines:]
-
-        # Display the new line
-        self.console.print(f"[dim]{formatted_time}[/dim] {text.strip()}")
 
     def show_status(self, message):
         """Show a status message."""

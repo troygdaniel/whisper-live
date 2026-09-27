@@ -41,13 +41,14 @@ Model: {self.model_name} | Source: {self.source}
         self.file_handle.write(header)
         self.file_handle.flush()
 
-    def write_transcript(self, text, timestamp):
+    def write_transcript(self, text, timestamp, speaker=None):
         """
         Write a transcript line to file.
 
         Args:
             text: Transcribed text
             timestamp: Timestamp in seconds
+            speaker: Speaker label (optional)
         """
         if not text or not text.strip():
             return
@@ -56,7 +57,12 @@ Model: {self.model_name} | Source: {self.source}
             return
 
         formatted_time = format_timestamp(timestamp)
-        line = f"[{formatted_time}] {text.strip()}\n"
+
+        # Format with speaker label if available
+        if speaker:
+            line = f"[{formatted_time}] [Speaker {speaker}] {text.strip()}\n"
+        else:
+            line = f"[{formatted_time}] {text.strip()}\n"
 
         self.file_handle.write(line)
         self.file_handle.flush()

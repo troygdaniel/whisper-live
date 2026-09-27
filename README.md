@@ -7,9 +7,11 @@ Real-time audio transcription using OpenAI Whisper. Runs completely offline with
 - **Real-time transcription** - See text appear as you speak
 - **Completely offline** - No internet required, no API calls
 - **Privacy-focused** - All processing happens locally
+- **Speaker diarization** - Identify different speakers (optional, offline)
 - **Multiple models** - Choose speed vs accuracy
 - **Auto-save** - Timestamped transcript files
 - **Live terminal display** - Rich formatted output
+- **System audio capture** - Transcribe Zoom calls, videos, podcasts
 
 ## Installation
 
@@ -48,6 +50,7 @@ whisper-live start --model small      # More accurate
 whisper-live start --output notes.txt # Custom filename
 whisper-live start --no-file          # Terminal only
 whisper-live start --language en      # Force language
+whisper-live start --diarize          # Identify different speakers
 ```
 
 **System Audio (requires BlackHole):**
@@ -55,7 +58,17 @@ whisper-live start --language en      # Force language
 whisper-live start --source system       # Capture system audio
 whisper-live start --device "BlackHole"  # Select device by name
 whisper-live start --device 5            # Select device by index
+whisper-live start --source system --diarize  # System audio + speaker ID
 ```
+
+**Speaker Diarization:**
+```bash
+whisper-live start --diarize                    # Enable speaker identification
+whisper-live start --model medium --diarize     # Better accuracy for speakers
+whisper-live start --source system --diarize    # Identify speakers in system audio
+```
+
+See [DIARIZATION.md](DIARIZATION.md) for setup instructions (one-time, ~10 minutes).
 
 ### List Audio Devices
 ```bash
@@ -64,13 +77,20 @@ whisper-live devices
 
 ## Models
 
-| Model | Speed | Accuracy | Use Case |
-|-------|-------|----------|----------|
-| `tiny` | ~1x realtime | Lower | Quick notes, casual use |
-| `base` | ~0.3x realtime | Good | **Recommended** - meetings, general use |
-| `small` | ~0.15x realtime | Higher | Important transcription, accuracy critical |
+| Model | Speed | Accuracy | Diarization Quality | Use Case |
+|-------|-------|----------|---------------------|----------|
+| `tiny` | ~1x realtime | Lower | Lower | Quick notes, casual use |
+| `base` | ~0.3x realtime | Good | Good | **Recommended** - meetings, general use |
+| `small` | ~0.15x realtime | Higher | Better | Important transcription |
+| `medium` | ~0.1x realtime | Very High | Better | **Best for diarization** |
+| `large` | ~0.05x realtime | Highest | Best | Maximum accuracy (slow) |
 
-Models download automatically on first use (~140MB for base).
+Models download automatically on first use:
+- `base`: ~140MB
+- `medium`: ~1.5GB
+- `large`: ~3GB
+
+For diarization, use `medium` or larger for best speaker identification.
 
 ## Output
 
@@ -92,6 +112,21 @@ Model: base | Source: microphone
 ---
 Duration: 00:01:45
 Ended: 2026-09-07 21:46:57
+```
+
+**With speaker diarization** (`--diarize`):
+```
+Whisper Live Transcription
+Started: 2026-09-27 14:30:00
+Model: medium | Source: microphone
+
+[00:00:05] [Speaker SPEAKER_00] So I think we should focus on the user experience first.
+[00:00:12] [Speaker SPEAKER_01] Yeah that makes sense. What are the key flows?
+[00:00:25] [Speaker SPEAKER_00] Well the primary use case is meeting transcription.
+
+---
+Duration: 00:01:45
+Ended: 2026-09-27 14:31:45
 ```
 
 ## System Audio Capture
@@ -186,13 +221,16 @@ whisper-live start --model tiny  # Use faster model
 ## Future Enhancements
 
 - ✓ **System audio capture** - Implemented! Use `--source system`
+- ✓ **Speaker diarization** - Implemented! Use `--diarize`
 - Rich terminal UI with panels
 - Clipboard auto-copy
 - Multiple output formats (JSON, Markdown)
 - Configuration commands
+- Speaker name customization (map SPEAKER_00 → "Alice")
 
 ## See Also
 
-- `USAGE.md` - Detailed usage guide
+- [DIARIZATION.md](DIARIZATION.md) - **Speaker diarization setup guide** (one-time setup)
+- [USAGE.md](USAGE.md) - Detailed usage guide
 - `config.yaml` - Configuration options
 - `test_imports.py` - Verify installation
