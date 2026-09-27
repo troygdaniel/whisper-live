@@ -35,12 +35,21 @@ class SpeakerDiarizer:
 
             # Try to load from cache first (offline)
             try:
-                self.pipeline = Pipeline.from_pretrained(
-                    "pyannote/speaker-diarization-3.1",
-                    use_auth_token=self.use_auth_token
-                )
+                # Try new API first (token parameter), fall back to old API (use_auth_token)
+                try:
+                    self.pipeline = Pipeline.from_pretrained(
+                        "pyannote/speaker-diarization-3.1",
+                        token=self.use_auth_token
+                    )
+                except TypeError:
+                    # Fallback for older pyannote versions
+                    self.pipeline = Pipeline.from_pretrained(
+                        "pyannote/speaker-diarization-3.1",
+                        use_auth_token=self.use_auth_token
+                    )
             except Exception as e:
-                if "offline" in str(e).lower() or "connection" in str(e).lower():
+                error_msg = str(e).lower()
+                if "offline" in error_msg or "connection" in error_msg or "not found" in error_msg:
                     raise RuntimeError(
                         "Diarization models not found in cache. "
                         "You need to download them once while online. "

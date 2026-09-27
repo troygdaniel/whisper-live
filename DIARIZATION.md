@@ -82,9 +82,10 @@ print("Downloading speaker diarization models...")
 print("This is a one-time download (~1.5GB)")
 print("")
 
+# Use 'token' parameter (newer pyannote versions)
 pipeline = Pipeline.from_pretrained(
     "pyannote/speaker-diarization-3.1",
-    use_auth_token=token
+    token=token
 )
 
 print("")
