@@ -25,10 +25,10 @@ if [ ! -d "$CACHE_DIR" ]; then
     exit 1
 fi
 
-# Find pyannote models in cache
-PYANNOTE_CACHE=$(find "$CACHE_DIR" -type d -name "*pyannote*speaker-diarization*" 2>/dev/null | head -1)
+# Find ALL pyannote models in cache
+PYANNOTE_MODELS=$(find "$CACHE_DIR" -type d -name "*pyannote*" -maxdepth 1 2>/dev/null)
 
-if [ -z "$PYANNOTE_CACHE" ]; then
+if [ -z "$PYANNOTE_MODELS" ]; then
     echo "✗ Error: Pyannote models not found in cache"
     echo ""
     echo "Cache directory: $CACHE_DIR"
@@ -45,24 +45,28 @@ if [ -z "$PYANNOTE_CACHE" ]; then
 fi
 
 echo "Found models in cache:"
-echo "  $PYANNOTE_CACHE"
+echo "$PYANNOTE_MODELS" | while read model; do
+    echo "  - $(basename $model)"
+done
 echo ""
 
-# Create models directory
+# Create models directory (this will be the hub directory)
 echo "Creating models directory..."
-mkdir -p "$MODELS_DIR"
+mkdir -p "$MODELS_DIR/hub"
 
-# Copy models
-echo "Copying models to repo..."
-echo "  From: $PYANNOTE_CACHE"
-echo "  To:   $MODELS_DIR"
+# Copy ALL pyannote models and blobs
+echo "Copying all pyannote models and dependencies..."
+echo "  From: $CACHE_DIR"
+echo "  To:   $MODELS_DIR/hub/"
 echo ""
 
-# Get just the model directory name
-MODEL_NAME=$(basename "$PYANNOTE_CACHE")
+# Copy all pyannote model directories
+find "$CACHE_DIR" -type d -name "*pyannote*" -maxdepth 1 -exec cp -R {} "$MODELS_DIR/hub/" \;
 
-# Copy the entire model directory
-cp -R "$PYANNOTE_CACHE" "$MODELS_DIR/"
+# Also copy shared files if they exist
+if [ -f "$CACHE_DIR/CACHEDIR.TAG" ]; then
+    cp "$CACHE_DIR/CACHEDIR.TAG" "$MODELS_DIR/hub/"
+fi
 
 # Check size
 SIZE=$(du -sh "$MODELS_DIR" | cut -f1)

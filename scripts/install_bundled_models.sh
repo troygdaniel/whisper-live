@@ -50,12 +50,17 @@ mkdir -p "$CACHE_DIR"
 
 # Copy bundled models to cache
 echo "Installing models to cache..."
-echo "  From: $MODELS_DIR"
+echo "  From: $MODELS_DIR/hub"
 echo "  To:   $CACHE_DIR"
 echo ""
 
-# Copy all model directories
-cp -R "$MODELS_DIR"/* "$CACHE_DIR/"
+# Copy all model directories from the hub subdirectory
+if [ -d "$MODELS_DIR/hub" ]; then
+    cp -R "$MODELS_DIR/hub"/* "$CACHE_DIR/"
+else
+    # Fallback for old bundle format
+    cp -R "$MODELS_DIR"/* "$CACHE_DIR/"
+fi
 
 # Verify installation
 echo "Verifying installation..."
