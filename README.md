@@ -68,7 +68,9 @@ whisper-live start --model medium --diarize     # Better accuracy for speakers
 whisper-live start --source system --diarize    # Identify speakers in system audio
 ```
 
-See [DIARIZATION.md](DIARIZATION.md) for setup instructions (one-time, ~10 minutes).
+**Setup Options:**
+- [DIARIZATION.md](DIARIZATION.md) - Standard setup with HuggingFace (one-time, ~10 min)
+- [SETUP_OFFLINE_BUNDLE.md](SETUP_OFFLINE_BUNDLE.md) - **For work computers:** Bundle models at home, use offline at work (no HF account needed)
 
 ### List Audio Devices
 ```bash
